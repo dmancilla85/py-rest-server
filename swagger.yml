@@ -1,0 +1,1024 @@
+# swagger.yml
+
+# ...
+
+openapi: 3.0.0
+info:
+  title: "RP Flask REST API"
+  description: "An API about people and notes"
+  version: "1.0.0"
+
+servers:
+  - url: "/api/v1"
+
+tags:
+- name: API
+  description: API tools
+- name: Authorization
+  description: Login with password or Google SSO
+- name: Categories
+  description: Operations with product categories
+- name: Products
+  description: Operations with products
+- name: Users
+  description: All related to system users
+
+paths:
+  /auth/login:
+    post:
+      tags:
+      - Authorization
+      summary: Login with password
+      description: Login with user password
+      operationId: resources.auth.login
+      requestBody:
+        description: Log in with user and password
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/Login"
+        required: true
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/LoginAuthorized"
+        '400':
+          description: Invalid user or password
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+
+  /categories:
+    get:
+      tags:
+        - Categories
+      summary: Get all categories
+      description: Get all categories
+      operationId: resources.categories.get_items
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/Category"
+        '401':
+          description: Invalid token, user unauthorized.
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        '404':
+          description: No categories found
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+      security:
+        - jwt: [ ]
+    post:
+      tags:
+        - Categories
+      summary: Add a new category to the store
+      description: Add a new category to the store
+      operationId: resources.categories.create_item
+      requestBody:
+        description: Create a new category in the store
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/RequestCategory"
+        required: true
+      responses:
+        '201':
+          description: Category created
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Category"
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        '401':
+          description: Invalid token, user unauthorized.
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+      security:
+        - jwt: [ ]
+
+  /categories/{item_id}:
+    get:
+      tags:
+        - Categories
+      summary: Get category by ID
+      description: Find a category searching by ID
+      operationId: resources.categories.get_item
+      parameters:
+        - name: item_id
+          in: path
+          description: The MongoID of the category to be fetched
+          required: true
+          explode: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Category"
+        '400':
+          description: Invalid ID value
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        '401':
+          description: Invalid token, user unauthorized.
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+      security:
+        - jwt: [ ]
+
+    delete:
+      tags:
+        - Categories
+      summary: Delete an existing category
+      description: Delete an existing category by Id
+      operationId: resources.categories.delete_item
+      parameters:
+        - name: id
+          in: path
+          description: The MongoID of the category to be deleted
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Category"
+        '400':
+          description: Invalid category ID supplied
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        '401':
+          description: Invalid token, user unauthorized.
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        '404':
+          description: Category ID not found
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+      security:
+        - jwt: [ ]
+
+    put:
+      tags:
+        - Categories
+      summary: Update an existing category
+      description: Update an existing category by Id
+      operationId: resources.categories.update_item
+      requestBody:
+        description: Update an existent category in the store
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/RequestCategory"
+        required: true
+      parameters:
+        - name: id
+          in: path
+          description: The MongoID of the category to be fetched
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Category"
+        '400':
+          description: Invalid MongoID supplied
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        '401':
+          description: Invalid token, user unauthorized.
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        '404':
+          description: There is no category with that MongoID
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+      security:
+        - jwt: [ ]
+
+  /products:
+    get:
+      tags:
+        - Products
+      summary: Get all products
+      description: Get all products
+      operationId: resources.products.get_items
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/Product"
+        '401':
+          description: Invalid token, user unauthorized.
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        '404':
+          description: No categories found
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+      security:
+        - jwt: [ ]
+
+    post:
+      tags:
+        - Products
+      summary: Add a new product to the store
+      description: Add a new product to the store
+      operationId: resources.products.create_item
+      requestBody:
+        description: Create a new product in the store
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/Product"
+        required: true
+      responses:
+        '201':
+          description: Product created
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Product"
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        '401':
+          description: Invalid token, user unauthorized.
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+      security:
+        - jwt: [ ]
+
+  /products/{item_id}:
+    get:
+      tags:
+        - Products
+      summary: Get product by ID
+      description: Find a product searching by ID
+      operationId: resources.products.get_item
+      parameters:
+        - name: item_id
+          in: path
+          description: The MongoID of the product to be fetched
+          required: true
+          explode: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Product"
+        '400':
+          description: Invalid ID value
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        '401':
+          description: Invalid token, user unauthorized.
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+      security:
+        - jwt: [ ]
+
+    delete:
+      tags:
+        - Products
+      summary: Delete an existing product
+      description: Delete an existing product by Id
+      operationId: resources.products.delete_item
+      parameters:
+        - name: id
+          in: path
+          description: The MongoID of the product to be deleted
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Product"
+        '400':
+          description: Invalid product ID supplied
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        '401':
+          description: Invalid token, user unauthorized.
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        '404':
+          description: Category ID not found
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+      security:
+        - jwt: [ ]
+
+    put:
+      tags:
+        - Products
+      summary: Update an existing product
+      description: Update an existing product by Id
+      operationId: resources.products.update_item
+      requestBody:
+        description: Update an existent product in the store
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/Product"
+        required: true
+      parameters:
+        - name: id
+          in: path
+          description: The MongoID of the product to be fetched
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Product"
+        '400':
+          description: Invalid MongoID supplied
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        '401':
+          description: Invalid token, user unauthorized.
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        '404':
+          description: There is no product with that MongoID
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+      security:
+        - jwt: [ ]
+
+  /users:
+    get:
+      tags:
+        - Users
+      summary: Get all users
+      description: Get all users
+      operationId: resources.users.get_items
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/User"
+        '401':
+          description: Invalid token, user unauthorized.
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        '404':
+          description: No categories found
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+      security:
+        - jwt: [ ]
+
+    post:
+      tags:
+        - Users
+      summary: Add a new user to the store
+      description: Add a new user to the store
+      operationId: resources.users.create_item
+      requestBody:
+        description: Create a new user in the store
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/RequestUser"
+        required: true
+      responses:
+        '201':
+          description: User created
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/User"
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        '401':
+          description: Invalid token, user unauthorized.
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+      security:
+        - jwt: [ ]
+
+  /users/{item_id}:
+    get:
+      tags:
+        - Users
+      summary: Get user by ID
+      description: Find a user searching by ID
+      operationId: resources.users.get_item
+      parameters:
+        - name: item_id
+          in: path
+          description: The MongoID of the users to be fetched
+          required: true
+          explode: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/User"
+        '400':
+          description: Invalid ID value
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        '401':
+          description: Invalid token, user unauthorized.
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+      security:
+        - jwt: [ ]
+
+    delete:
+      tags:
+        - Users
+      summary: Delete an existing user
+      description: Delete an existing user by Id
+      operationId: resources.users.delete_item
+      parameters:
+        - name: id
+          in: path
+          description: The MongoID of the user to be deleted
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/User"
+        '400':
+          description: Invalid user ID supplied
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        '401':
+          description: Invalid token, user unauthorized.
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        '404':
+          description: User ID not found
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+      security:
+        - jwt: [ ]
+
+    put:
+      tags:
+        - Users
+      summary: Update an existing user
+      description: Update an existing user by Id
+      operationId: resources.users.update_item
+      requestBody:
+        description: Update an existent user in the store
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/RequestUser"
+        required: true
+      parameters:
+        - name: id
+          in: path
+          description: The MongoID of the user to be fetched
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/User"
+        '400':
+          description: Invalid MongoID supplied
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        '401':
+          description: Invalid token, user unauthorized.
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        '404':
+          description: There is no user with that MongoID
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+      security:
+        - jwt: [ ]
+
+  /roles:
+    get:
+      tags:
+        - Roles
+      summary: Get all roles
+      description: Get all roles
+      operationId: resources.roles.get_items
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  "$ref": "#/components/schemas/Role"
+        '401':
+          description: Invalid token, user unauthorized.
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        '404':
+          description: No roles found
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+      security:
+        - jwt: [ ]
+
+    post:
+      tags:
+        - Roles
+      summary: Add a new role to the store
+      description: Add a new role to the store
+      operationId: resources.roles.create_item
+      requestBody:
+        description: Create a new roles in the store
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/RequestRole"
+        required: true
+      responses:
+        '201':
+          description: Role created
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Role"
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        '401':
+          description: Invalid token, user unauthorized.
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+      security:
+        - jwt: [ ]
+
+  /roles/{item_id}:
+    get:
+      tags:
+        - Roles
+      summary: Get role by ID
+      description: Find a role searching by ID
+      operationId: resources.roles.get_item
+      parameters:
+        - name: item_id
+          in: path
+          description: The MongoID of the roles to be fetched
+          required: true
+          explode: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Role"
+        '400':
+          description: Invalid ID value
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        '401':
+          description: Invalid token, user unauthorized.
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+      security:
+        - jwt: [ ]
+
+    delete:
+      tags:
+        - Roles
+      summary: Delete an existing role
+      description: Delete an existing role by Id
+      operationId: resources.roles.delete_item
+      parameters:
+        - name: id
+          in: path
+          description: The MongoID of the role to be deleted
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Role"
+        '400':
+          description: Invalid role ID supplied
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        '401':
+          description: Invalid token, user unauthorized.
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        '404':
+          description: Role ID not found
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+      security:
+        - jwt: [ ]
+
+    put:
+      tags:
+        - Roles
+      summary: Update an existing role
+      description: Update an existing role by Id
+      operationId: resources.roles.update_item
+      requestBody:
+        description: Update an existent role in the store
+        content:
+          application/json:
+            schema:
+              "$ref": "#/components/schemas/RequestRole"
+        required: true
+      parameters:
+        - name: id
+          in: path
+          description: The MongoID of the role to be fetched
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Role"
+        '400':
+          description: Invalid MongoID supplied
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        '401':
+          description: Invalid token, user unauthorized.
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+        '404':
+          description: There is no user with that MongoID
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
+      security:
+        - jwt: [ ]
+
+components:
+  schemas:
+    Category:
+      type: object
+      properties:
+        _id:
+          type: string
+          minLength: 24
+          maxLength: 24
+          example: "6208136134ffbeeabc4b1ead"
+        name:
+          type: string
+          example: PASTRIES
+        active:
+          type: boolean
+          description: current status in the store
+        userId:
+          type: string
+          minLength: 24
+          maxLength: 24
+          example: "62032250fdca5ca1a170d977"
+
+    RequestCategory:
+      required:
+        - name
+      type: object
+      properties:
+        name:
+          type: string
+          example: PASTRY ROLL
+
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 24
+          maxLength: 24
+          example: 68376272814ffbeeabc4b1ed
+        name:
+          type: string
+          example: PASTRY ROLL
+        categoryId:
+          type: string
+          minLength: 24
+          maxLength: 24
+          example: 68376272814ffbeeabc4b1ed
+        price:
+          type: number
+          example: 10.50
+        active:
+          type: boolean
+          description: current status in the store
+        available:
+          type: boolean
+          example: true
+
+    RequestProduct:
+      required:
+        - name
+        - categoryId
+      type: object
+      properties:
+        name:
+          type: string
+          example: PASTRY ROLL
+        categoryId:
+          type: string
+          minLength: 24
+          maxLength: 24
+          example: 62083fbdb5d9510f71cf6988
+        price:
+          type: number
+          example: 10.50
+        description:
+          type: string
+          example: A delicious pastry roll
+        available:
+          type: boolean
+          example: true
+
+    Login:
+      required:
+        - email
+        - password
+      type: object
+      properties:
+        email:
+          type: string
+          example: test
+        password:
+          type: string
+          example: test
+
+    LoginAuthorized:
+      type: object
+      properties:
+        user:
+          "$ref": "#/components/schemas/User"
+        token:
+          type: string
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1aWQiOiI2MjAzMjI1MGZkY2E1Y2ExYTE3MGQ5NzciLCJpYXQiOjE2NjMzNDI1OTMsImV4cCI6MTY2MzM1Njk5M30.xFPKG8n_TIfPGRI6rlpSE3KSNyOC7BTOnYOqNnJtzcw
+
+    RequestUser:
+      required:
+        - name
+        - role
+        - email
+        - password
+      type: object
+      properties:
+        name:
+          type: string
+          example: John Smith
+        email:
+          type: string
+          example: test3@gmail.com
+        password:
+          type: string
+          example: '12345678'
+        role:
+          type: string
+          example: ADMIN_ROLE
+          enum:
+            - ADMIN_ROLE
+            - USER_ROLE
+
+    RequestRole:
+      required:
+        - name
+      type: object
+      properties:
+        name:
+          type: string
+          example: John Smith
+
+    Role:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 24
+          maxLength: 24
+          example: 68373827924ffbeeabc4b1ed
+        name:
+          type: string
+          example: John Smith
+        active:
+          type: boolean
+          description: current status in the store
+
+    User:
+      required:
+      - name
+      - role
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 24
+          maxLength: 24
+          example: 68373827924ffbeeabc4b1ed
+        name:
+          type: string
+          example: John Smith
+        email:
+          type: string
+          example: test3@gmail.com
+        password:
+          type: string
+          example: '12345678'
+        img:
+          type: string
+          example: test.jpg
+        role:
+          type: string
+          example: ADMIN_ROLE
+          enum:
+          - ADMIN_ROLE
+          - USER_ROLE
+        active:
+          type: boolean
+          description: current status in the store
+
+    ProblemDetails:
+      type: object
+      properties:
+        type:
+          type: string
+          example: BadRequest
+        title:
+          type: string
+          example: Invalid ID
+        detail:
+          type: string
+          example: The ID supplied is not a valid MongoID value
+
+  securitySchemes:
+    jwt:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      x-bearerInfoFunc: resources.auth.decode_token
