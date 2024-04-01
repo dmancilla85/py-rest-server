@@ -19,7 +19,6 @@ def get_items():
     items = list(items_collection.find())
     for item in items:
         item['_id'] = str(item['_id'])
-        item['userId'] = str(item['userId'])
     return jsonify({'items': items})
 
 
@@ -33,7 +32,6 @@ def get_item(item_id):
     item = items_collection.find_one({'_id': ObjectId(item_id)})
     if item is not None:
         item['_id'] = str(item['_id'])
-        item['userId'] = str(item['userId'])
         return jsonify(item)
     else:
         return jsonify({'message': 'Item not found'}), 404
@@ -42,7 +40,7 @@ def get_item(item_id):
 #@app.route(basePath, methods=['POST'])
 def create_item():
     item = request.get_json()
-    exists = items_collection.find_one({'name': item['name']})
+    exists = items_collection.find_one({'role': item['role']})
 
     if exists is not None:
         problem = problem_http_response(400, "Invalid parameters", "Item already exists.", f"/{resource}")

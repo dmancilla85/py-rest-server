@@ -20,7 +20,6 @@ def get_items():
 
     for item in items:
         item['_id'] = str(item['_id'])
-        item['userId'] = str(item['userId'])
     return jsonify({'items': items})
 
 
@@ -35,7 +34,6 @@ def get_item(item_id):
 
     if item is not None:
         item['_id'] = str(item['_id'])
-        item['userId'] = str(item['userId'])
         return jsonify(item)
     else:
         problem = problem_http_response(404, "Item not found", "Item ID not exists.", f"/{resource}/{item_id}")

@@ -15,6 +15,7 @@ health = HealthCheck()
 envdump = EnvironmentDump()
 CONTENT_TYPE_LATEST = str('text/plain; version=0.0.4; charset=utf-8')
 
+
 # add your own check function to the healthcheck
 def mongo_available():
     client = MongoClient(env['MONGODB_CONN'])
@@ -49,4 +50,4 @@ app.config["JWT_SECRET_KEY"] = env['MONGODB_CONN']
 jwt = JWTManager(app)
 
 if __name__ == '__main__':
-    con_app.run(host="localhost", port=8080)
+    con_app.run(host="0.0.0.0", port=5000)
