@@ -1,3 +1,5 @@
+import logging
+
 from flask import Flask, jsonify, request, Response
 from httpproblem import problem_http_response
 from pymongo import MongoClient
@@ -13,18 +15,14 @@ db = client['cafeDB']
 items_collection = db[resource]
 
 
-#@app.route(basePath, methods=['GET'])
 def get_items():
-
     items = list(items_collection.find())
     for item in items:
         item['_id'] = str(item['_id'])
     return jsonify({'items': items})
 
 
-#@app.route(f'{basePath}/<string:item_id>', methods=['GET'])
 def get_item(item_id):
-
     if not ObjectId.is_valid(item_id):
         problem = problem_http_response(400, "Invalid parameters", "Item ID is not valid.", f"/{resource}/{item_id}")
         return Response(problem['body'], status=problem['statusCode'], headers=problem['headers'])
@@ -34,10 +32,11 @@ def get_item(item_id):
         item['_id'] = str(item['_id'])
         return jsonify(item)
     else:
-        return jsonify({'message': 'Item not found'}), 404
+        logging.warning(f"ID {item_id} not exists in {resource}.")
+        problem = problem_http_response(404, "Item not found", "Item ID not exists.", f"/{resource}/{item_id}")
+        return Response(problem['body'], status=problem['statusCode'], headers=problem['headers'])
 
 
-#@app.route(basePath, methods=['POST'])
 def create_item():
     item = request.get_json()
     exists = items_collection.find_one({'role': item['role']})
@@ -51,9 +50,7 @@ def create_item():
     return jsonify(item), 201
 
 
-#@app.route(f'{basePath}/<string:item_id>', methods=['PUT'])
 def update_item(item_id):
-
     if not ObjectId.is_valid(item_id):
         problem = problem_http_response(400, "Invalid parameters", "Item ID is not valid.", f"/{resource}/{item_id}")
         return Response(problem['body'], status=problem['statusCode'], headers=problem['headers'])
@@ -65,13 +62,12 @@ def update_item(item_id):
         item['_id'] = item_id
         return jsonify(item)
     else:
+        logging.warning(f"ID {item_id} not exists in {resource}.")
         problem = problem_http_response(404, "Item not found", "Item ID not exists.", f"/{resource}/{item_id}")
         return Response(problem['body'], status=problem['statusCode'], headers=problem['headers'])
 
 
-#@app.route(f'{basePath}/<string:item_id>', methods=['DELETE'])
 def delete_item(item_id):
-
     if not ObjectId.is_valid(item_id):
         problem = problem_http_response(400, "Invalid parameters", "Item ID is not valid.", f"/{resource}/{item_id}")
         return Response(problem['body'], status=problem['statusCode'], headers=problem['headers'])
@@ -81,5 +77,6 @@ def delete_item(item_id):
     if result.deleted_count:
         return jsonify({'message': 'Item deleted'})
     else:
+        logging.warning(f"ID {item_id} not exists in {resource}.")
         problem = problem_http_response(404, "Item not found", "Item ID not exists.", f"/{resource}/{item_id}")
         return Response(problem['body'], status=problem['statusCode'], headers=problem['headers'])

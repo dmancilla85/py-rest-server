@@ -1,3 +1,5 @@
+import logging
+
 from flask import Flask, jsonify, request, Response
 from httpproblem import problem_http_response
 from pymongo import MongoClient
@@ -36,6 +38,7 @@ def get_item(item_id):
         item['_id'] = str(item['_id'])
         return jsonify(item)
     else:
+        logging.warning(f"ID {item_id} not exists in {resource}.")
         problem = problem_http_response(404, "Item not found", "Item ID not exists.", f"/{resource}/{item_id}")
         return Response(problem['body'], status=problem['statusCode'], headers=problem['headers'])
 
@@ -67,6 +70,7 @@ def update_item(item_id):
         item['_id'] = item_id
         return jsonify(item)
     else:
+        logging.warning(f"ID {item_id} not exists in {resource}.")
         problem = problem_http_response(404, "Item not found", "Item ID not exists.", f"/{resource}/{item_id}")
         return Response(problem['body'], status=problem['statusCode'], headers=problem['headers'])
 
@@ -82,5 +86,6 @@ def delete_item(item_id):
     if result.deleted_count:
         return jsonify({'message': 'Item deleted'})
     else:
+        logging.warning(f"ID {item_id} not exists in {resource}.")
         problem = problem_http_response(404, "Item not found", "Item ID not exists.", f"/{resource}/{item_id}")
         return Response(problem['body'], status=problem['statusCode'], headers=problem['headers'])

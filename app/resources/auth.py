@@ -1,6 +1,7 @@
 """
 Basic example of a resource server
 """
+import logging
 import time
 import flask_jwt_extended
 import bcrypt
@@ -18,6 +19,7 @@ def decode_token(token):
     try:
         return flask_jwt_extended.decode_token(token)
     except Exception as e:
+        logging.error(f"Error decoding token: {e}")
         problem = problem_http_response(401, "Something went wrong", str(e), "decode_token")
         return Response(problem['body'], status=problem['statusCode'], headers=problem['headers'])
 
