@@ -5,14 +5,15 @@ import logging
 import time
 import flask_jwt_extended
 import bcrypt
-from pymongo import MongoClient
 from httpproblem import problem_http_response
 from flask import request, jsonify, Response
 from os import environ as env
 
+from services.mongodb_service import MongoDbService
+
 # MongoDB's connection string
-client = MongoClient(env['MONGODB_CONN'])
-db = client['cafeDB']
+mongo_client = MongoDbService()
+users = mongo_client.get_collection("users")
 
 
 def decode_token(token):
@@ -32,7 +33,7 @@ def login():
         problem = problem_http_response(400, "Login incorrect", "Empty parameters.", "/auth/login")
         return Response(problem['body'], status=problem['statusCode'], headers=problem['headers'])
 
-    item = db['users'].find_one({'email': username})
+    item = users.find_one({'email': username})
     item['_id'] = str(item['_id'])
 
     if item is not None:

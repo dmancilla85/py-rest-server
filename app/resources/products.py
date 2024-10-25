@@ -1,18 +1,15 @@
 import logging
-
 from flask import jsonify, request, Response
 from httpproblem import problem_http_response
-from pymongo import MongoClient
 from bson import ObjectId
-from os import environ as env
+from services.mongodb_service import MongoDbService
 
 resource = 'products'
 # basePath = f"/api/{resource}"
 
 # MongoDB's connection string
-client = MongoClient(env['MONGODB_CONN'])
-db = client['cafeDB']
-items_collection = db[resource]
+mongo_client = MongoDbService()
+items_collection = mongo_client.get_collection(resource)
 
 
 # @app.route(basePath, methods=['GET'])
