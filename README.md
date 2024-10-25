@@ -23,3 +23,6 @@ Additional info:
 ```
 python -m pip install "connexion[swagger-ui, flask, uvicorn]"
 ```
+
+## Swagger
+To view the Swagger UI go to api/v1/ui
