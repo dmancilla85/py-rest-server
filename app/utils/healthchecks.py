@@ -1,5 +1,5 @@
 import logging
-import websocket
+import websockets
 from os import environ as env
 from pymongo import MongoClient
 
@@ -15,7 +15,7 @@ def mongo_available():
 
 
 def check_websocket(url):
-    ws = websocket.WebSocket()
+    ws = websockets.WebSocket()
 
     try:
         ws.connect(url)
