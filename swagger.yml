@@ -908,10 +908,10 @@ components:
       properties:
         email:
           type: string
-          example: test
+          example: test3@gmail.com
         password:
           type: string
-          example: test
+          example: 12345678
 
     LoginAuthorized:
       type: object

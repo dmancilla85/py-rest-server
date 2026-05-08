@@ -1,19 +1,16 @@
-FROM python:3.12
+FROM python:3.14
 LABEL authors="David A. Mancilla"
 
-# Create app directory
 WORKDIR /server
 
-# Install app dependencies
-COPY ./requirements.txt ./
-COPY ./swagger.yml ./
-COPY ./.env ./
+COPY pyproject.toml uv.lock ./
+COPY swagger.yml ./
 
-RUN pip install -r requirements.txt
+RUN pip install uv && uv sync --no-dev
 
-# Bundle app source
+COPY . .
 
-COPY app /server/app
-
-EXPOSE 8080
-CMD [ "python", "/server/app/app.py" ]
+ARG PORT=5000
+ENV PORT=${PORT}
+EXPOSE ${PORT}
+CMD ["uv", "run", "main.py"]
