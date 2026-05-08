@@ -26,42 +26,41 @@ def decode_token(token):
 
 
 def login():
-    username = request.json.get("email", None)
-    password = request.json.get("password", None)
+    data = request.get_json(silent=True)
+    if not data:
+        return _error(400, "Login incorrect", "Request must have a JSON body.")
 
-    if len(username) == 0 or len(password) == 0:
-        problem = problem_http_response(400, "Login incorrect", "Empty parameters.", "/auth/login")
-        return Response(problem['body'], status=problem['statusCode'], headers=problem['headers'])
+    username = data.get("email") or ""
+    password = data.get("password") or ""
+
+    if not username or not password:
+        return _error(400, "Login incorrect", "Email and password are required.")
 
     item = users.find_one({'email': username})
-    item['_id'] = str(item['_id'])
-
     if item is not None:
-        if bcrypt.checkpw(bytes(password, 'utf-8'), bytes(item['password'], 'utf-8')):
+        item['_id'] = str(item['_id'])
+        if bcrypt.checkpw(password.encode('utf-8'), item['password'].encode('utf-8')):
             return jsonify({"user": item, "token": _build_token(username)})
-        else:
-            problem = problem_http_response(400, "Login incorrect", "The password is incorrect.", "/auth/login")
-            return Response(problem['body'], status=problem['statusCode'], headers=problem['headers'])
+        return _error(400, "Login incorrect", "The password is incorrect.")
 
-    problem = problem_http_response(400, "Login incorrect", "Email is not valid.", "/auth/login")
+    return _error(400, "Login incorrect", "Email is not valid.")
+
+
+def _error(status_code, title, detail):
+    problem = problem_http_response(status_code, title, detail, "/auth/login")
     return Response(problem['body'], status=problem['statusCode'], headers=problem['headers'])
 
 
-def _current_timestamp() -> int:
-    return int(time.time())
-
-
 def _build_token(username) -> str:
-    timestamp = _current_timestamp()
+    timestamp = int(time.time())
+    lifetime = int(env.get('JWT_LIFETIME_SECONDS', 3600))
 
     payload = {
-        "iss": env['JWT_ISSUER'],
-        "iat": int(timestamp),
-        "aud": env['JWT_AUDIENCE'],
-        "exp": int(timestamp + int(env['JWT_LIFETIME_SECONDS'])),
+        "iss": env.get('JWT_ISSUER', 'localhost'),
+        "iat": timestamp,
+        "aud": env.get('JWT_AUDIENCE', 'localhost'),
+        "exp": timestamp + lifetime,
         "sub": str(username),
     }
 
-    # You can use the additional_claims argument to either add
-    # custom claims or override default claims in the JWT.
     return flask_jwt_extended.create_access_token(username, additional_claims=payload)

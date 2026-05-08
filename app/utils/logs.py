@@ -16,7 +16,8 @@ def create_directory(directory_path):
                 raise
 
 
-def setup_logging(app_name, logger=logging.getLogger()):
+def setup_logging(app_name, logger=None):
+    logger = logger or logging.getLogger()
     if env["MODE"] != "DEBUG":
         handler = setup_handler(app_name)
         logger.addHandler(handler)
