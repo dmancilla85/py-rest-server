@@ -35,7 +35,7 @@ open http://localhost:5000/api/v1/ui
 
 ## Test Suite
 
-52 tests — 96% code coverage:
+64 tests — 98% code coverage:
 
 ```bash
 uv run pytest --cov=app --cov-report=term

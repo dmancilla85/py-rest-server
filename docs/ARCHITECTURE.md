@@ -81,18 +81,7 @@ The system provides a RESTful API for managing products, categories, users, and 
 
 ### 3.1 Business Context
 
-```
-┌──────────────────────┐     HTTP/JSON      ┌──────────────────────┐
-│    Client App        │ ◄──────────────────►│      api-rest        │
-│  (Web / Mobile / CLI)│                     │   (REST API Server)  │
-└──────────────────────┘                     └──────────┬───────────┘
-                                                         │ PyMongo
-                                                         ▼
-                                                ┌──────────────────┐
-                                                │    MongoDB        │
-                                                │   (Database)      │
-                                                └──────────────────┘
-```
+![Business Context Diagram](diagrams/business_context.svg)
 
 ### 3.2 Technical Context
 
@@ -123,61 +112,11 @@ The system provides a RESTful API for managing products, categories, users, and 
 
 ### 5.1 Level 1 — System Context
 
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                     api-rest System                              │
-│                                                                  │
-│  ┌──────────────┐    ┌──────────────┐    ┌──────────────────┐   │
-│  │  Resources    │    │  Services    │    │   Utilities      │   │
-│  │  (API Layer)  │───►│  (Business)  │───►│   (Support)      │   │
-│  └──────────────┘    └──────────────┘    └──────────────────┘   │
-│         │                                                        │
-│         │ OpenAPI                                                 │
-│         ▼                                                        │
-│  ┌──────────────┐                                                │
-│  │  swagger.yml  │                                                │
-│  │  (API Spec)   │                                                │
-│  └──────────────┘                                                │
-└─────────────────────────────────────────────────────────────────┘
-```
+![System Context — Level 1](diagrams/system_context.svg)
 
 ### 5.2 Level 2 — Container View
 
-```
-┌──────────────────────────────────────────────────────────────────────┐
-│                          api-rest Docker Container                    │
-│                                                                      │
-│  ┌──────────────────────────────────────────────────────────────┐   │
-│  │                   Uvicorn (ASGI Server)                       │   │
-│  │                         Port: 5000                            │   │
-│  │  ┌────────────────────────────────────────────────────────┐  │   │
-│  │  │                FlaskApp (Connexion)                    │  │   │
-│  │  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐ │  │   │
-│  │  │  │ Auth     │ │ Category │ │ Product  │ │ User/Role│ │  │   │
-│  │  │  │ Resource │ │ Resource │ │ Resource │ │ Resource │ │  │   │
-│  │  │  └──────────┘ └──────────┘ └──────────┘ └──────────┘ │  │   │
-│  │  │  ┌────────────────────────────────────────────────┐    │  │   │
-│  │  │  │         BaseResource (Generic CRUD)            │    │  │   │
-│  │  │  └────────────────────────────────────────────────┘    │  │   │
-│  │  │  ┌──────────────┐ ┌──────────────┐ ┌──────────────┐   │  │   │
-│  │  │  │  Health      │ │ Environment  │ │  Prometheus  │   │  │   │
-│  │  │  │  Check       │ │   Dump       │ │   Metrics    │   │  │   │
-│  │  │  └──────────────┘ └──────────────┘ └──────────────┘   │  │   │
-│  │  └────────────────────────────────────────────────────────┘  │   │
-│  └──────────────────────────────────────────────────────────────┘   │
-│                                                                      │
-│  ┌──────────────────────────────────────────────────────────────┐   │
-│  │                  MongoDbService (Singleton)                   │   │
-│  │               ┌────────────────────────────┐                  │   │
-│  │               │     PyMongo MongoClient    │                  │   │
-│  │               └────────────────────────────┘                  │   │
-│  └──────────────────────────────────────────────────────────────┘   │
-│                                                                      │
-│  ┌──────────────────────────────────────────────────────────────┐   │
-│  │  Utils: Logging (TimedRotatingFileHandler) | Dates | Health  │   │
-│  └──────────────────────────────────────────────────────────────┘   │
-└──────────────────────────────────────────────────────────────────────┘
-```
+![Container View — Level 2](diagrams/container_view.svg)
 
 ### 5.3 Level 3 — Component View
 
@@ -228,70 +167,15 @@ The system provides a RESTful API for managing products, categories, users, and 
 
 ### 6.1 User Login Flow
 
-```
-Client                    API Server                  MongoDB
-  │                          │                          │
-  │  POST /api/v1/auth/login │                          │
-  │  {email, password}       │                          │
-  ├─────────────────────────►│                          │
-  │                          │  users.find_one({email}) │
-  │                          ├─────────────────────────►│
-  │                          │◄─────────────────────────┤
-  │                          │     {user document}      │
-  │                          │                          │
-  │                          │  bcrypt.checkpw(password)│
-  │                          │       hash match?        │
-  │                          │                          │
-  │                          │  create_access_token()   │
-  │                          │                          │
-  │  HTTP 200 {user, token}  │                          │
-  │◄─────────────────────────┤                          │
-```
+![User Login Flow](diagrams/login_flow.svg)
 
 ### 6.2 CRUD Operation Flow (via BaseResource)
 
-```
-Client                    BaseResource                MongoDbService      MongoDB
-  │                          │                          │                   │
-  │  GET/POST/PUT/DELETE     │                          │                   │
-  │  /api/v1/{collection}    │                          │                   │
-  ├─────────────────────────►│                          │                   │
-  │                          │  Validate input          │                   │
-  │                          │  (JSON body, ObjectId)   │                   │
-  │                          │                          │                   │
-  │                          │  get_collection(name)    │                   │
-  │                          │─────────────────────────►│                   │
-  │                          │◄─────────────────────────┤                   │
-  │                          │     collection object    │                   │
-  │                          │                          │                   │
-  │                          │  find/insert/update/     │                   │
-  │                          │  delete_one()            │                   │
-  │                          │─────────────────────────────────────────────►│
-  │                          │◄─────────────────────────────────────────────┤
-  │                          │                          │                   │
-  │                          │  Stringify ObjectId      │                   │
-  │                          │  fields in response      │                   │
-  │                          │                          │                   │
-  │  HTTP 200/201/400/404    │                          │                   │
-  │◄─────────────────────────┤                          │                   │
-```
+![CRUD Operation Flow](diagrams/crud_flow.svg)
 
 ### 6.3 Health Check Flow
 
-```
-Monitoring Client            API Server                  DB
-  │                            │                         │
-  │  GET /api/health           │                         │
-  ├───────────────────────────►│                         │
-  │                            │  mongo_available()      │
-  │                            │  ├─ MongoDbService()    │
-  │                            │  ├─ get_info()          │
-  │                            │  │─────────────────────►│
-  │                            │  │◄─────────────────────│
-  │                            │  └─ return (ok, info)   │
-  │  HTTP 200 {status, info}   │                         │
-  │◄───────────────────────────┤                         │
-```
+![Health Check Flow](diagrams/health_check_flow.svg)
 
 ---
 
@@ -299,27 +183,7 @@ Monitoring Client            API Server                  DB
 
 ### 7.1 Docker Deployment
 
-```
-┌──────────────────────────────────────┐
-│         Host Machine                 │
-│                                      │
-│  ┌──────────────────────────────┐    │
-│  │  Docker Container            │    │
-│  │  ┌────────────────────────┐  │    │
-│  │  │  Python 3.14           │  │    │
-│  │  │  ├─ Uvicorn            │  │    │
-│  │  │  ├─ Flask/Connexion    │  │    │
-│  │  │  ├─ PyMongo            │  │    │
-│  │  │  └─ prometheus-client  │  │    │
-│  │  └────────────────────────┘  │    │
-│  │  Exposes: Port 5000          │    │
-│  │  Volume: .env (config)       │    │
-│  └──────────────────────────────┘    │
-│                                      │
-│  MongoDB Atlas / Self-hosted         │
-│  (external dependency)               │
-└──────────────────────────────────────┘
-```
+![Docker Deployment View](diagrams/docker_deployment.svg)
 
 ### 7.2 Build & Run Commands
 
@@ -872,38 +736,11 @@ Not implemented. All API messages are in English.
 
 ### 14.1 Entity Relationship Overview
 
-```
-┌─────────────┐       ┌─────────────┐
-│   Category   │       │   Product    │
-├─────────────┤       ├─────────────┤
-│ _id (PK)    │       │ _id (PK)    │
-│ name        │       │ name        │
-│ active      │       │ categoryId (FK)──►Category._id
-│ userId      │       │ price       │
-└─────────────┘       │ active      │
-                      │ available   │
-┌─────────────┐       └─────────────┘
-│    User     │
-├─────────────┤       ┌─────────────┐
-│ _id (PK)    │       │    Role     │
-│ name        │       ├─────────────┤
-│ email       │       │ _id (PK)    │
-│ password    │       │ name        │
-│ img         │       │ active      │
-│ role        │       └─────────────┘
-│ active      │
-└─────────────┘
-```
+![Entity Relationship Diagram](diagrams/er_diagram.svg)
 
 ### 14.2 Data Flow
 
-```
-Client Request → Connexion (validate via swagger.yml)
-  → Resource Handler (base.py / auth.py)
-    → MongoDbService.get_collection()
-      → PyMongo CRUD operations
-        → MongoDB
-```
+![Data Flow](diagrams/data_flow.svg)
 
 ### 14.3 Data Retention and Lifecycle
 
