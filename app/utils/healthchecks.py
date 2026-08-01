@@ -7,6 +7,6 @@ def mongo_available():
         info = svc.get_info()
         return True, {"status": "OK", "info": str(info)}
     except Exception as e:
-        return False, {"status": "ERROR", "info": e}
+        return False, {"status": "ERROR", "info": str(e)}
 
 

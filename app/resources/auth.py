@@ -10,6 +10,7 @@ from flask import request, jsonify, Response
 from os import environ as env
 
 from services.mongodb_service import MongoDbService
+from utils.ratelimit import LOGIN_LIMIT, limiter
 
 # MongoDB's connection string
 mongo_client = MongoDbService()
@@ -21,10 +22,10 @@ def decode_token(token):
         return flask_jwt_extended.decode_token(token)
     except Exception as e:
         logging.error(f"Error decoding token: {e}")
-        problem = problem_http_response(401, "Something went wrong", str(e), "decode_token")
-        return Response(problem['body'], status=problem['statusCode'], headers=problem['headers'])
+        return None
 
 
+@limiter.limit(LOGIN_LIMIT)
 def login():
     data = request.get_json(silent=True)
     if not data:

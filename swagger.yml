@@ -39,6 +39,12 @@ paths:
               "$ref": "#/components/schemas/Login"
         required: true
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '200':
           description: successful operation
           content:
@@ -76,6 +82,12 @@ paths:
             minimum: 1
             default: 20
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '200':
           description: successful operation
           content:
@@ -104,6 +116,12 @@ paths:
               "$ref": "#/components/schemas/RequestCategory"
         required: true
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '201':
           description: Category created
           content:
@@ -141,6 +159,12 @@ paths:
           schema:
             type: string
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '200':
           description: successful operation
           content:
@@ -176,6 +200,12 @@ paths:
           schema:
             type: string
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '200':
           description: Successful operation
           content:
@@ -224,6 +254,12 @@ paths:
           schema:
             type: string
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '200':
           description: Successful operation
           content:
@@ -275,6 +311,12 @@ paths:
             minimum: 1
             default: 20
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '200':
           description: successful operation
           content:
@@ -304,6 +346,12 @@ paths:
               "$ref": "#/components/schemas/RequestProduct"
         required: true
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '201':
           description: Product created
           content:
@@ -341,6 +389,12 @@ paths:
           schema:
             type: string
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '200':
           description: successful operation
           content:
@@ -376,6 +430,12 @@ paths:
           schema:
             type: string
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '200':
           description: Successful operation
           content:
@@ -424,6 +484,12 @@ paths:
           schema:
             type: string
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '200':
           description: Successful operation
           content:
@@ -475,6 +541,12 @@ paths:
             minimum: 1
             default: 20
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '200':
           description: successful operation
           content:
@@ -504,6 +576,12 @@ paths:
               "$ref": "#/components/schemas/RequestUser"
         required: true
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '201':
           description: User created
           content:
@@ -541,6 +619,12 @@ paths:
           schema:
             type: string
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '200':
           description: successful operation
           content:
@@ -576,6 +660,12 @@ paths:
           schema:
             type: string
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '200':
           description: Successful operation
           content:
@@ -624,6 +714,12 @@ paths:
           schema:
             type: string
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '200':
           description: Successful operation
           content:
@@ -675,6 +771,12 @@ paths:
             minimum: 1
             default: 20
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '200':
           description: successful operation
           content:
@@ -704,6 +806,12 @@ paths:
               "$ref": "#/components/schemas/RequestRole"
         required: true
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '201':
           description: Role created
           content:
@@ -741,6 +849,12 @@ paths:
           schema:
             type: string
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '200':
           description: successful operation
           content:
@@ -776,6 +890,12 @@ paths:
           schema:
             type: string
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '200':
           description: Successful operation
           content:
@@ -824,6 +944,12 @@ paths:
           schema:
             type: string
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '200':
           description: Successful operation
           content:

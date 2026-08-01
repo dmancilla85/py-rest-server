@@ -8,7 +8,17 @@ def _reset():
         if m.startswith("app") or m.startswith("connexion") or m in (
             "dotenv", "healthcheck", "prometheus_client",
             "flask_jwt_extended", "starlette.middleware.cors",
+            "utils.ratelimit", "flask_limiter",
+            "flask_limiter.errors", "flask_limiter.util", "flask_limiter._extension",
         ):
+            sys.modules.pop(m, None)
+
+
+@pytest.fixture(autouse=True)
+def _cleanup_rate_limiter_modules():
+    yield
+    for m in list(sys.modules):
+        if m == "utils.ratelimit" or m.startswith("flask_limiter"):
             sys.modules.pop(m, None)
 
 
@@ -38,7 +48,7 @@ class TestApplicationData:
             data = app.application_data()
             assert data["maintainer"] == "David A. Mancilla"
             assert "github.com" in data["git_repo"]
-            assert data["version"] == "1.0.0"
+            assert data["version"] == "1.1.0"
 
 
 class TestAppBootstrap:

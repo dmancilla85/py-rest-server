@@ -96,4 +96,4 @@ class TestDecodeToken:
     def test_invalid_token(self, mock_decode):
         from resources.auth import decode_token
         result = decode_token("expired-token")
-        assert result.status_code == 401
+        assert result is None
