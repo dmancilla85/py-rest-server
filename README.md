@@ -1,5 +1,9 @@
 # REST-API Python
 
+[![Tests](https://github.com/dmancilla85/py-rest-server/actions/workflows/tests.yml/badge.svg)](https://github.com/dmancilla85/py-rest-server/actions/workflows/tests.yml)
+[![Coverage](https://codecov.io/gh/dmancilla85/py-rest-server/branch/develop/graph/badge.svg)](https://codecov.io/gh/dmancilla85/py-rest-server)
+[![Dependabot](https://img.shields.io/badge/Dependabot-enabled-025e8c?logo=Dependabot&logoColor=white)](https://github.com/dmancilla85/py-rest-server/blob/develop/.github/dependabot.yml)
+
 Flask + Connexion REST API with MongoDB, JWT auth, Prometheus metrics, and an OpenAPI 3.0 spec.
 
 ## Features
