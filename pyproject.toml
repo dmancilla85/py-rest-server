@@ -1,6 +1,6 @@
 [project]
 name = "api-rest"
-version = "1.0.0"
+version = "1.1.0"
 description = "REST API with Flask, Connexion, MongoDB"
 readme = "README.md"
 requires-python = ">=3.14"
@@ -20,6 +20,7 @@ dependencies = [
     "dnspython==2.8.0",
     "flask==3.1.3",
     "flask-jwt-extended==4.7.1",
+    "flask-limiter==4.1.1",
     "h11==0.16.0",
     "httpcore==1.0.9",
     "httpproblem==0.2.0",

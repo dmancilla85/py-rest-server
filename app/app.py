@@ -5,16 +5,19 @@ from dotenv import load_dotenv
 from os import environ as env
 from flask import Response, request
 from flask_jwt_extended import JWTManager
+from flask_limiter.errors import RateLimitExceeded
 from healthcheck import HealthCheck, EnvironmentDump
+from httpproblem import problem_http_response
 from prometheus_client import generate_latest
 from starlette.middleware.cors import CORSMiddleware
 from utils import healthchecks
 from utils.logs import setup_logging
+from utils.ratelimit import limiter
 
 load_dotenv()
 setup_logging("api-rest")
 
-__version__ = "1.0.0"
+__version__ = "1.1.0"
 
 # health Checks
 health = HealthCheck()
@@ -48,6 +51,19 @@ con_app.add_api("../swagger.yml")
 
 app = con_app.app
 app.app_context().push()
+
+limiter.init_app(app)
+
+
+@app.errorhandler(RateLimitExceeded)
+def handle_rate_limit_exceeded(e):
+    response = problem_http_response(
+        429, "Too Many Requests", f"Rate limit exceeded ({e.description}).", "/api/v1"
+    )
+    headers = dict(response['headers'])
+    headers["Retry-After"] = str(e.limit.limit.get_expiry())
+    return Response(response['body'], status=response['statusCode'], headers=headers)
+
 
 # Add a flask route to expose information
 app.add_url_rule("/api/health", "healthcheck", view_func=lambda: health.run())

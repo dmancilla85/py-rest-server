@@ -3,8 +3,8 @@
 | Field | Value |
 |-------|-------|
 | **Project Name** | api-rest |
-| **Document ID** | SRS-API-REST-v1.0.0 |
-| **Version** | 1.0.0 |
+| **Document ID** | SRS-API-REST-v1.1.0 |
+| **Version** | 1.1.0 |
 | **Status** | Approved |
 | **Date** | 2026-05-08 |
 | **Authors** | David A. Mancilla |
@@ -17,6 +17,7 @@
 | Version | Date | Description | Author |
 |---------|------|-------------|--------|
 | 1.0.0 | 2026-05-08 | Initial release | David A. Mancilla |
+| 1.1.0 | 2026-08-01 | Added per-IP rate limiting (FR-047 through FR-051), NFR-SEC-006, and related traceability | David A. Mancilla |
 
 ---
 
@@ -104,6 +105,7 @@ The api-rest system is a standalone REST API server. It depends on an external M
 - **User Management:** Create, read, update, and delete system users.
 - **Role Management:** Create, read, update, and delete user roles.
 - **Monitoring:** Health check endpoint, environment information dump, Prometheus metrics.
+- **Rate Limiting:** Per-IP request throttling on API endpoints with a stricter limit on login, RFC 7807 429 responses, and exempt operational endpoints.
 - **API Documentation:** Interactive Swagger UI at `/api/v1/ui`.
 
 ### 2.3 User Classes and Characteristics
@@ -279,6 +281,25 @@ The system SHALL expose health check, environment information, and Prometheus me
 - **FR-045:** The system SHALL expose GET `/api/metrics` returning Prometheus-formatted metrics data.
 - **FR-046:** The system SHALL log every HTTP request with remote address, method, scheme, path, and response status.
 
+### 3.7 Rate Limiting
+
+#### 3.7.1 Description and Priority
+
+The system SHALL throttle requests per client IP address to protect against abuse and brute-force login attempts. **Priority: High**
+
+#### 3.7.2 Stimulus/Response Sequences
+
+- **Stimulus:** Client sends requests to `/api/v1/*` endpoints beyond the configured per-IP limit within the limit window.
+- **Response:** System returns HTTP 429 with a problem-details body, `Retry-After`, and `X-RateLimit-*` headers.
+
+#### 3.7.3 Functional Requirements
+
+- **FR-047:** The system SHALL enforce a per-IP rate limit on all `/api/v1/*` endpoints, configurable via `RATE_LIMIT_DEFAULT` (default `60 per minute; 5 per second`).
+- **FR-048:** The system SHALL enforce a stricter per-IP rate limit on `/api/v1/auth/login`, configurable via `RATE_LIMIT_LOGIN` (default `5 per minute`).
+- **FR-049:** The system SHALL return HTTP 429 with an RFC 7807 problem-details body when a rate limit is exceeded, including `Retry-After` and `X-RateLimit-Limit`, `X-RateLimit-Remaining`, and `X-RateLimit-Reset` headers.
+- **FR-050:** The system SHALL exempt `/api/health`, `/api/environment`, and `/api/metrics` from rate limiting.
+- **FR-051:** The system SHALL allow rate limiting to be configured through environment variables and fully disabled via `RATE_LIMIT_ENABLED=false`.
+
 ---
 
 ## 4. External Interface Requirements
@@ -322,6 +343,7 @@ No direct hardware interface requirements.
 - **NFR-SEC-003:** The system SHALL NOT expose the JWT secret key in any response.
 - **NFR-SEC-004:** The system SHALL validate JWT tokens on every authenticated request via the `decode_token` function.
 - **NFR-SEC-005:** The system SHALL allow configurable CORS origins, methods, and headers.
+- **NFR-SEC-006:** The system SHALL mitigate brute-force and abuse attempts through per-IP rate limiting, with a stricter limit on the login endpoint.
 
 ### 5.3 Software Quality Attributes (NFR-Q)
 
@@ -386,3 +408,8 @@ No direct hardware interface requirements.
 | FR-044 | Environment info endpoint | Monitoring | Medium | Implemented |
 | FR-045 | Metrics endpoint | Monitoring | Medium | Implemented |
 | FR-046 | HTTP request logging | Monitoring | Medium | Implemented |
+| FR-047 | Per-IP limit on API endpoints | Rate Limiting | High | Implemented |
+| FR-048 | Stricter per-IP limit on login | Rate Limiting | High | Implemented |
+| FR-049 | 429 problem-details with Retry-After | Rate Limiting | High | Implemented |
+| FR-050 | Exempt operational endpoints | Rate Limiting | High | Implemented |
+| FR-051 | Env-configurable, disableable | Rate Limiting | High | Implemented |

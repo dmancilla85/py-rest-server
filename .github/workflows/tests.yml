@@ -1,0 +1,21 @@
+name: Tests
+
+on:
+  push:
+    branches: [master, develop]
+  pull_request:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          cache-dependency-glob: uv.lock
+      - run: uv sync
+      - run: uv run pytest -p no:cacheprovider -q --cov=app --cov-report=xml
+      - uses: codecov/codecov-action@v5
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: coverage.xml

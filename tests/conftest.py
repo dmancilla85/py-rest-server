@@ -12,6 +12,10 @@ os.environ.setdefault("MODE", "DEBUG")
 os.environ.setdefault("LOG_LEVEL", "DEBUG")
 os.environ.setdefault("LOG_PATH", "./test_logs")
 os.environ.setdefault("LOG_BACKUP_COUNT", "5")
+os.environ.setdefault("RATE_LIMIT_ENABLED", "false")
+os.environ.setdefault("RATE_LIMIT_DEFAULT", "60 per minute; 5 per second")
+os.environ.setdefault("RATE_LIMIT_LOGIN", "5 per minute")
+os.environ.setdefault("RATE_LIMIT_STORAGE_URI", "memory://")
 
 
 @pytest.fixture

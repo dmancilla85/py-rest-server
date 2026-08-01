@@ -8,8 +8,30 @@ def _reset():
         if m.startswith("app") or m.startswith("connexion") or m in (
             "dotenv", "healthcheck", "prometheus_client",
             "flask_jwt_extended", "starlette.middleware.cors",
+            "utils.ratelimit", "flask_limiter",
+            "flask_limiter.errors", "flask_limiter.util", "flask_limiter._extension",
         ):
             sys.modules.pop(m, None)
+
+
+@pytest.fixture(autouse=True)
+def _cleanup_rate_limiter_modules():
+    yield
+    for m in list(sys.modules):
+        if m == "utils.ratelimit" or m.startswith("flask_limiter"):
+            sys.modules.pop(m, None)
+
+
+def _import_app():
+    import app
+    # app.py:50 pushes the app context at import time. Pop it so it doesn't leak
+    # into flask's contextvars; connexion executor threads copy that context and
+    # later tests would otherwise run under a stale Flask app without a JWTManager.
+    from flask.globals import _cv_app
+    ctx = _cv_app.get(None)
+    if ctx is not None and ctx.app is app.app:
+        ctx.pop()
+    return app
 
 
 class TestApplicationData:
@@ -22,11 +44,11 @@ class TestApplicationData:
             patch("healthcheck.HealthCheck"),
             patch("healthcheck.EnvironmentDump"),
         ):
-            import app
+            app = _import_app()
             data = app.application_data()
             assert data["maintainer"] == "David A. Mancilla"
             assert "github.com" in data["git_repo"]
-            assert data["version"] == "1.0.0"
+            assert data["version"] == "1.1.0"
 
 
 class TestAppBootstrap:
@@ -51,7 +73,7 @@ class TestAppBootstrap:
         for p in patches.values():
             p.start()
 
-        import app
+        app = _import_app()
 
         for p in reversed(list(patches.values())):
             p.stop()
@@ -80,7 +102,7 @@ class TestAppBootstrap:
             patch("flask_jwt_extended.JWTManager"),
             patch("prometheus_client.generate_latest", return_value=b""),
         ):
-            import app
+            app = _import_app()
             rules = [r.rule for r in real_app.url_map.iter_rules()]
             assert "/api/health" in rules
             assert "/api/environment" in rules
@@ -125,7 +147,7 @@ class TestAfterRequest:
             patch("flask_jwt_extended.JWTManager"),
             patch("prometheus_client.generate_latest", return_value=b""),
         ):
-            import app
+            app = _import_app()
             resp = MagicMock()
             resp.status = "200 OK"
             with real_app.test_request_context("/"):

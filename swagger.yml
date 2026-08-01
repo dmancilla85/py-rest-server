@@ -4,22 +4,22 @@
 
 openapi: 3.0.0
 info:
-  title: "RP Flask REST API"
-  description: "An API about people and notes"
+  title: "API REST"
+  description: "REST API for managing users, roles, product categories and products, secured with JWT."
   version: "1.0.0"
 
 servers:
   - url: "/api/v1"
 
 tags:
-- name: API
-  description: API tools
 - name: Authorization
-  description: Login with password or Google SSO
+  description: Login with user and password
 - name: Categories
   description: Operations with product categories
 - name: Products
   description: Operations with products
+- name: Roles
+  description: Operations with user roles
 - name: Users
   description: All related to system users
 
@@ -39,6 +39,12 @@ paths:
               "$ref": "#/components/schemas/Login"
         required: true
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '200':
           description: successful operation
           content:
@@ -59,23 +65,37 @@ paths:
       summary: Get all categories
       description: Get all categories
       operationId: resources.categories.get_items
+      parameters:
+        - name: page
+          in: query
+          description: Page number to return
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+        - name: per_page
+          in: query
+          description: Number of items per page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 20
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '200':
           description: successful operation
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  "$ref": "#/components/schemas/Category"
+                "$ref": "#/components/schemas/CategoryList"
         '401':
           description: Invalid token, user unauthorized.
-          content:
-            application/json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
-        '404':
-          description: No categories found
           content:
             application/json:
               schema:
@@ -96,6 +116,12 @@ paths:
               "$ref": "#/components/schemas/RequestCategory"
         required: true
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '201':
           description: Category created
           content:
@@ -133,6 +159,12 @@ paths:
           schema:
             type: string
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '200':
           description: successful operation
           content:
@@ -161,19 +193,25 @@ paths:
       description: Delete an existing category by Id
       operationId: resources.categories.delete_item
       parameters:
-        - name: id
+        - name: item_id
           in: path
           description: The MongoID of the category to be deleted
           required: true
           schema:
             type: string
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/Category"
+                "$ref": "#/components/schemas/Message"
         '400':
           description: Invalid category ID supplied
           content:
@@ -209,13 +247,19 @@ paths:
               "$ref": "#/components/schemas/RequestCategory"
         required: true
       parameters:
-        - name: id
+        - name: item_id
           in: path
           description: The MongoID of the category to be fetched
           required: true
           schema:
             type: string
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '200':
           description: Successful operation
           content:
@@ -250,23 +294,37 @@ paths:
       summary: Get all products
       description: Get all products
       operationId: resources.products.get_items
+      parameters:
+        - name: page
+          in: query
+          description: Page number to return
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+        - name: per_page
+          in: query
+          description: Number of items per page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 20
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '200':
           description: successful operation
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  "$ref": "#/components/schemas/Product"
+                "$ref": "#/components/schemas/ProductList"
         '401':
           description: Invalid token, user unauthorized.
-          content:
-            application/json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
-        '404':
-          description: No categories found
           content:
             application/json:
               schema:
@@ -285,9 +343,15 @@ paths:
         content:
           application/json:
             schema:
-              "$ref": "#/components/schemas/Product"
+              "$ref": "#/components/schemas/RequestProduct"
         required: true
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '201':
           description: Product created
           content:
@@ -325,6 +389,12 @@ paths:
           schema:
             type: string
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '200':
           description: successful operation
           content:
@@ -353,19 +423,25 @@ paths:
       description: Delete an existing product by Id
       operationId: resources.products.delete_item
       parameters:
-        - name: id
+        - name: item_id
           in: path
           description: The MongoID of the product to be deleted
           required: true
           schema:
             type: string
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/Product"
+                "$ref": "#/components/schemas/Message"
         '400':
           description: Invalid product ID supplied
           content:
@@ -398,16 +474,22 @@ paths:
         content:
           application/json:
             schema:
-              "$ref": "#/components/schemas/Product"
+              "$ref": "#/components/schemas/RequestProduct"
         required: true
       parameters:
-        - name: id
+        - name: item_id
           in: path
           description: The MongoID of the product to be fetched
           required: true
           schema:
             type: string
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '200':
           description: Successful operation
           content:
@@ -442,23 +524,37 @@ paths:
       summary: Get all users
       description: Get all users
       operationId: resources.users.get_items
+      parameters:
+        - name: page
+          in: query
+          description: Page number to return
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+        - name: per_page
+          in: query
+          description: Number of items per page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 20
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '200':
           description: successful operation
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  "$ref": "#/components/schemas/User"
+                "$ref": "#/components/schemas/UserList"
         '401':
           description: Invalid token, user unauthorized.
-          content:
-            application/json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
-        '404':
-          description: No categories found
           content:
             application/json:
               schema:
@@ -480,6 +576,12 @@ paths:
               "$ref": "#/components/schemas/RequestUser"
         required: true
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '201':
           description: User created
           content:
@@ -517,6 +619,12 @@ paths:
           schema:
             type: string
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '200':
           description: successful operation
           content:
@@ -545,19 +653,25 @@ paths:
       description: Delete an existing user by Id
       operationId: resources.users.delete_item
       parameters:
-        - name: id
+        - name: item_id
           in: path
           description: The MongoID of the user to be deleted
           required: true
           schema:
             type: string
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/User"
+                "$ref": "#/components/schemas/Message"
         '400':
           description: Invalid user ID supplied
           content:
@@ -593,13 +707,19 @@ paths:
               "$ref": "#/components/schemas/RequestUser"
         required: true
       parameters:
-        - name: id
+        - name: item_id
           in: path
           description: The MongoID of the user to be fetched
           required: true
           schema:
             type: string
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '200':
           description: Successful operation
           content:
@@ -634,23 +754,37 @@ paths:
       summary: Get all roles
       description: Get all roles
       operationId: resources.roles.get_items
+      parameters:
+        - name: page
+          in: query
+          description: Page number to return
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+        - name: per_page
+          in: query
+          description: Number of items per page
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 20
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '200':
           description: successful operation
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  "$ref": "#/components/schemas/Role"
+                "$ref": "#/components/schemas/RoleList"
         '401':
           description: Invalid token, user unauthorized.
-          content:
-            application/json:
-              schema:
-                "$ref": "#/components/schemas/ProblemDetails"
-        '404':
-          description: No roles found
           content:
             application/json:
               schema:
@@ -672,6 +806,12 @@ paths:
               "$ref": "#/components/schemas/RequestRole"
         required: true
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '201':
           description: Role created
           content:
@@ -709,6 +849,12 @@ paths:
           schema:
             type: string
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '200':
           description: successful operation
           content:
@@ -737,19 +883,25 @@ paths:
       description: Delete an existing role by Id
       operationId: resources.roles.delete_item
       parameters:
-        - name: id
+        - name: item_id
           in: path
           description: The MongoID of the role to be deleted
           required: true
           schema:
             type: string
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '200':
           description: Successful operation
           content:
             application/json:
               schema:
-                "$ref": "#/components/schemas/Role"
+                "$ref": "#/components/schemas/Message"
         '400':
           description: Invalid role ID supplied
           content:
@@ -785,13 +937,19 @@ paths:
               "$ref": "#/components/schemas/RequestRole"
         required: true
       parameters:
-        - name: id
+        - name: item_id
           in: path
           description: The MongoID of the role to be fetched
           required: true
           schema:
             type: string
       responses:
+        '429':
+          description: Too many requests (rate limit exceeded)
+          content:
+            application/problem+json:
+              schema:
+                "$ref": "#/components/schemas/ProblemDetails"
         '200':
           description: Successful operation
           content:
@@ -853,11 +1011,12 @@ components:
     Product:
       type: object
       properties:
-        id:
+        _id:
           type: string
           minLength: 24
           maxLength: 24
           example: 68376272814ffbeeabc4b1ed
+          readOnly: true
         name:
           type: string
           example: PASTRY ROLL
@@ -958,11 +1117,12 @@ components:
     Role:
       type: object
       properties:
-        id:
+        _id:
           type: string
           minLength: 24
           maxLength: 24
           example: 68373827924ffbeeabc4b1ed
+          readOnly: true
         name:
           type: string
           example: John Smith
@@ -976,11 +1136,12 @@ components:
       - role
       type: object
       properties:
-        id:
+        _id:
           type: string
           minLength: 24
           maxLength: 24
           example: 68373827924ffbeeabc4b1ed
+          readOnly: true
         name:
           type: string
           example: John Smith
@@ -1002,6 +1163,49 @@ components:
         active:
           type: boolean
           description: current status in the store
+
+    Message:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Item deleted
+
+    CategoryList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": "#/components/schemas/Category"
+        count:
+          type: integer
+
+    ProductList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": "#/components/schemas/Product"
+        count:
+          type: integer
+
+    UserList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": "#/components/schemas/User"
+
+    RoleList:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            "$ref": "#/components/schemas/Role"
 
     ProblemDetails:
       type: object

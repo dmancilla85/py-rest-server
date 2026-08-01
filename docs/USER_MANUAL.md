@@ -3,11 +3,20 @@
 | Field | Value |
 |-------|-------|
 | **Product Name** | api-rest |
-| **Version** | 1.0.0 |
-| **Document ID** | UM-API-REST-v1.0.0 |
-| **Date** | 2026-05-08 |
+| **Version** | 1.1.0 |
+| **Document ID** | UM-API-REST-v1.1.0 |
+| **Date** | 2026-08-01 |
 | **Intended Audience** | Developers and System Administrators |
 | **Classification** | Internal |
+
+---
+
+## Revision History
+
+| Version | Date | Description | Author |
+|---------|------|-------------|--------|
+| 1.0.0 | 2026-05-08 | Initial release | David A. Mancilla |
+| 1.1.0 | 2026-08-01 | Added "Rate Limiting" chapter (new Chapter 9); renumbered Troubleshooting to 10 and Glossary to 11 | David A. Mancilla |
 
 ---
 
@@ -31,8 +40,9 @@ For support: [GitHub Issues](https://github.com/dmancilla85/py-rest-server/issue
 6. [Managing Users](#6-managing-users)
 7. [Managing Roles](#7-managing-roles)
 8. [Monitoring](#8-monitoring)
-9. [Troubleshooting](#9-troubleshooting)
-10. [Glossary](#10-glossary)
+9. [Rate Limiting](#9-rate-limiting)
+10. [Troubleshooting](#10-troubleshooting)
+11. [Glossary](#11-glossary)
 
 ---
 
@@ -383,9 +393,78 @@ curl http://localhost:5000/api/metrics
 
 ---
 
-## 9. Troubleshooting
+## 9. Rate Limiting
 
-### 9.1 Common Issues
+### 9.1 Overview
+
+api-rest protects its endpoints against abuse and brute-force login attempts by limiting how many requests a client IP address can make within a time window. Limiting is per IP address only and applies to all `/api/v1/*` endpoints, with a stricter, separate limit on `/auth/login`.
+
+The operational endpoints `/api/health`, `/api/environment`, and `/api/metrics` are always exempt from rate limits.
+
+### 9.2 Default Limits
+
+| Endpoint | Default Limit |
+|----------|---------------|
+| `/api/v1/*` (all CRUD endpoints) | 60 requests per minute, 5 per second |
+| `/api/v1/auth/login` | 5 requests per minute |
+
+### 9.3 When a Limit Is Exceeded
+
+When a client exceeds a limit, the server responds with HTTP 429 and a problem-details body:
+
+```bash
+curl -s http://localhost:5000/api/v1/categories
+```
+
+```http
+HTTP/1.1 429 Too Many Requests
+Content-Type: application/problem+json
+Retry-After: 37
+X-RateLimit-Limit: 5 per minute
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1670000000
+```
+
+```json
+{
+  "title": "Too Many Requests",
+  "status": 429,
+  "detail": "Rate limit exceeded. Please try again later."
+}
+```
+
+The response headers tell the client when it can retry:
+
+- `Retry-After` — seconds until the limit window resets.
+- `X-RateLimit-Limit` — the configured limit for this endpoint.
+- `X-RateLimit-Remaining` — requests remaining in the current window.
+- `X-RateLimit-Reset` — Unix timestamp when the window resets.
+
+### 9.4 Configuring Rate Limits
+
+Rate limiting is configured entirely through environment variables in `.env`:
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `RATE_LIMIT_ENABLED` | `true` | Set to `false` to disable rate limiting completely |
+| `RATE_LIMIT_DEFAULT` | `60 per minute; 5 per second` | Limits for `/api/v1/*` endpoints |
+| `RATE_LIMIT_LOGIN` | `5 per minute` | Limit for `/auth/login` |
+| `RATE_LIMIT_STORAGE_URI` | `memory://` | Storage backend (use `redis://...` for multi-worker deployments) |
+
+Example:
+
+```bash
+RATE_LIMIT_ENABLED=true
+RATE_LIMIT_DEFAULT=120 per minute
+RATE_LIMIT_LOGIN=3 per minute
+RATE_LIMIT_STORAGE_URI=memory://
+```
+
+---
+
+## 10. Troubleshooting
+
+### 10.1 Common Issues
 
 | Problem | Possible Cause | Solution |
 |---------|----------------|----------|
@@ -396,9 +475,10 @@ curl http://localhost:5000/api/metrics
 | HTTP 400 "Item already exists" | Duplicate name | Use a different name. |
 | HTTP 400 "Item ID is not valid" | Invalid ObjectId format | ObjectId must be 24 hex characters. |
 | MongoDB connection error | Wrong connection string | Check `MONGODB_CONN` in `.env`. |
+| HTTP 429 "Too Many Requests" | Rate limit exceeded | Wait for the limit window to reset (see `Retry-After`), or raise the limit in `.env`. |
 | No Swagger UI | Server not running | Start the server with `uv run python main.py`. |
 
-### 9.2 Error Messages
+### 10.2 Error Messages
 
 **Error:** "Item ID is not valid."
 
@@ -424,9 +504,15 @@ curl http://localhost:5000/api/metrics
 
 **Solution:** Ensure both `email` and `password` fields are provided and correct.
 
+**Error:** HTTP 429 "Too Many Requests"
+
+**Meaning:** Your IP address has exceeded the request limit for this endpoint within the current time window.
+
+**Solution:** Wait for the window to reset (`Retry-After` header shows seconds), then retry. Consider raising `RATE_LIMIT_DEFAULT` or `RATE_LIMIT_LOGIN` in `.env` if legitimate traffic is affected.
+
 ---
 
-## 10. Glossary
+## 11. Glossary
 
 | Term | Definition |
 |------|------------|
@@ -438,6 +524,8 @@ curl http://localhost:5000/api/metrics
 | Endpoint | A specific URL path that accepts HTTP requests |
 | JWT | JSON Web Token — a compact, URL-safe token used for authentication |
 | MongoDB ObjectId | A 24-character hexadecimal string used as a unique identifier in MongoDB |
+| Rate Limiting | A technique that restricts how many requests a client can make within a time window |
+| 429 Too Many Requests | HTTP status returned when a client exceeds a rate limit |
 | REST | Representational State Transfer — an architectural style for designing APIs |
 | Swagger UI | An interactive web interface for testing API endpoints |
 | Singleton | A design pattern that ensures only one instance of a class exists |
