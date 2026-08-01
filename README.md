@@ -7,6 +7,7 @@ Flask + Connexion REST API with MongoDB, JWT auth, Prometheus metrics, and an Op
 - **OpenAPI 3.0 contract** — `swagger.yml` is the single source of truth for the API; Connexion wires every endpoint to its handler.
 - **Generic CRUD** — resources (`users`, `roles`, `products`, `categories`) share a `BaseResource` implementation: ObjectId validation, pagination (`page`/`per_page`), and RFC 7807 problem responses.
 - **JWT authentication** — password login with bcrypt-hashed credentials; protected endpoints require a bearer token.
+- **Rate limiting** — per-IP limits on all `/api/v1/*` endpoints (configurable via env), with a stricter limit on login; exceeding a limit returns RFC 7807 `429` with `Retry-After` and `X-RateLimit-*` headers. `/api/health`, `/api/environment`, and `/api/metrics` are exempt.
 - **Observability** — health check, environment dump, and Prometheus metrics endpoints plus per-request access logging.
 - **Tests without a database** — the whole suite runs mocked; MongoDB is not required.
 
@@ -51,10 +52,23 @@ All settings are read from `.env` (via `python-dotenv`) or the environment.
 | `JWT_ISSUER` | no | Token issuer claim |
 | `JWT_AUDIENCE` | no | Token audience claim |
 | `JWT_LIFETIME_SECONDS` | no | Token lifetime in seconds (default `3600`) |
+| `RATE_LIMIT_ENABLED` | no | Enable rate limiting (`true`/`false`, default `true`) |
+| `RATE_LIMIT_DEFAULT` | no | Per-IP limits for `/api/v1/*` endpoints, `;`-separated (default `60 per minute; 5 per second`) |
+| `RATE_LIMIT_LOGIN` | no | Per-IP limit for `/auth/login` (default `5 per minute`) |
+| `RATE_LIMIT_STORAGE_URI` | no | Rate-limit storage backend (default `memory://`; use `redis://...` for multi-worker) |
 
-> **Note:** `example.env` now includes every variable the app reads (`MONGODB_DB` included). Copy it to `.env` and fill in your values.
+> **Note:** `example.env` includes every variable the app reads (`MONGODB_DB` and the `RATE_LIMIT_*` vars included). Copy it to `.env` and fill in your values.
 
 The server boots even when MongoDB is unreachable, but CRUD requests then fail (500). `/api/health` reflects the database state.
+
+## Rate Limiting
+
+Rate limiting is enforced per IP address on all `/api/v1/*` endpoints and on `/api/v1/auth/login` (which has a stricter, separate limit). When a limit is exceeded the API returns `429 Too Many Requests` in RFC 7807 problem-details format, along with:
+
+- `Retry-After` — seconds until the limit window resets
+- `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`
+
+The operational endpoints `/api/health`, `/api/environment`, and `/api/metrics` are exempt from rate limits. Set `RATE_LIMIT_ENABLED=false` to disable limiting entirely, or point `RATE_LIMIT_STORAGE_URI` at Redis when running more than one worker.
 
 ## API Endpoints
 
@@ -104,7 +118,7 @@ The suite is fully mocked — no MongoDB needed:
 ```bash
 uv run pytest        # all tests
 uv run pytest tests/test_auth.py   # single file
-uv run pytest --cov  # with coverage (currently 98%, 64 tests)
+uv run pytest --cov  # with coverage (currently 98%, 68 tests)
 ```
 
 ## Docker
@@ -122,6 +136,7 @@ docker run --rm -p 5000:5000 py-rest-api
 | Server | Uvicorn (ASGI) |
 | Database | MongoDB (PyMongo) |
 | Auth | JWT (Flask-JWT-Extended) |
+| Rate Limiting | Flask-Limiter 4 |
 | API Spec | OpenAPI 3.0 (Swagger) |
 | Monitoring | Prometheus metrics + health checks |
 

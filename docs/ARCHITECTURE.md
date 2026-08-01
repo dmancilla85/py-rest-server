@@ -3,8 +3,8 @@
 | Field | Value |
 |-------|-------|
 | **Project Name** | api-rest |
-| **Document ID** | ARCH-API-REST-v1.0.0 |
-| **Version** | 1.0.0 |
+| **Document ID** | ARCH-API-REST-v1.1.0 |
+| **Version** | 1.1.0 |
 | **Architecture Style** | Layered (N-Tier) |
 | **Primary Language** | Python 3.14 |
 | **Framework(s)** | Flask 3, Connexion 3 |
@@ -18,6 +18,7 @@
 | Version | Date | Description | Author |
 |---------|------|-------------|--------|
 | 1.0.0 | 2026-05-08 | Initial release | David A. Mancilla |
+| 1.1.0 | 2026-08-01 | Added per-IP rate limiting (Flask-Limiter), RFC 7807 429 responses, and related configuration | David A. Mancilla |
 
 ---
 
@@ -51,8 +52,8 @@ The system provides a RESTful API for managing products, categories, users, and 
 
 | Priority | Quality Goal | Scenario |
 |----------|-------------|----------|
-| 1 | Security | All data access requires valid JWT authentication; passwords hashed with bcrypt |
-| 2 | Maintainability | DRY principle applied via BaseResource; 96% test coverage |
+| 1 | Security | All data access requires valid JWT authentication; passwords hashed with bcrypt; per-IP rate limiting protects against abuse and brute force |
+| 2 | Maintainability | DRY principle applied via BaseResource; 98% test coverage |
 | 3 | Interoperability | OpenAPI 3.0 specification enables any HTTP client to integrate |
 | 4 | Observability | Health checks, environment dump, Prometheus metrics, and request logging |
 
@@ -102,6 +103,7 @@ The system provides a RESTful API for managing products, categories, users, and 
   - **ASGI Server:** Uvicorn via a2wsgi bridge for async performance.
   - **Database:** MongoDB with PyMongo driver, singleton connection management.
   - **Authentication:** JWT via Flask-JWT-Extended, bcrypt password hashing.
+  - **Rate Limiting:** Flask-Limiter for per-IP request throttling (env-configurable).
   - **Monitoring:** py-healthcheck for health/endpoints, prometheus-client for metrics.
 - **Key Design Principles:** DRY (via BaseResource generic CRUD), singleton pattern (MongoDbService), environment-based configuration.
 - **Trade-offs:** Monolithic deployment chosen over microservices due to single-domain scope and team size; synchronous request handling accepted over async due to simplicity.
@@ -161,6 +163,19 @@ The system provides a RESTful API for managing products, categories, users, and 
 | Users | `users` | `name` | `_id` | No |
 | Roles | `roles` | `role` | `_id` | No |
 
+#### 5.3.5 RateLimiter
+
+| Property | Value |
+|----------|-------|
+| **Type** | Utility / Middleware |
+| **File** | `app/utils/ratelimit.py` |
+| **Responsibility** | Per-IP request throttling for API endpoints |
+| **Methods** | module-level `limiter` (flask-limiter `Limiter`), `_parse_limits`, `_is_exempt`; constants `DEFAULT_LIMITS`, `LOGIN_LIMIT` |
+| **Dependencies** | `flask_limiter`, `os.environ` |
+| **Configuration** | `RATE_LIMIT_ENABLED`, `RATE_LIMIT_DEFAULT`, `RATE_LIMIT_LOGIN`, `RATE_LIMIT_STORAGE_URI` |
+
+The `limiter` instance is created at module import time from the `RATE_LIMIT_*` environment variables. `app/app.py` calls `limiter.init_app(app)` and registers a 429 handler; `auth.login()` is decorated with `LOGIN_LIMIT`. The endpoints `/api/health`, `/api/environment`, and `/api/metrics` are exempt. Limiting is per IP only (no JWT-based keys) and can be fully disabled with `RATE_LIMIT_ENABLED=false`.
+
 ---
 
 ## 6. Runtime View
@@ -204,6 +219,7 @@ docker run --rm -p 5000:5000 --env-file .env py-rest-api
 - **Authentication:** JWT Bearer tokens issued at `/api/v1/auth/login`.
 - **Password Storage:** bcrypt hashing with per-password salts.
 - **Token Validation:** Every authenticated request validated via `decode_token` function referenced in swagger.yml as `x-bearerInfoFunc`.
+- **Rate Limiting:** Per-IP throttling on all `/api/v1/*` endpoints with a stricter limit on `/auth/login`; `/api/health`, `/api/environment`, and `/api/metrics` are exempt.
 - **CORS:** Configured via middleware allowing all origins (configurable).
 - **Secret Management:** All secrets read from environment variables; JWT secret key has a development-only fallback.
 
@@ -211,6 +227,7 @@ docker run --rm -p 5000:5000 --env-file .env py-rest-api
 
 - **Validation Errors:** HTTP 400 with RFC 9457 Problem Details JSON format.
 - **Not Found:** HTTP 404 with problem details.
+- **Rate Limit Exceeded:** HTTP 429 with RFC 9457 Problem Details format plus `Retry-After` and `X-RateLimit-*` headers.
 - **Internal Errors:** Caught by Flask/Connexion error handlers, logged with stack trace.
 - **Error Format:**
   ```json
@@ -277,6 +294,16 @@ Not implemented. All API messages are in English.
 | **Decision** | Run FlaskApp on Uvicorn ASGI server via a2wsgi bridge. |
 | **Consequences** | Positive: ASGI performance characteristics. Negative: WSGI-ASGI bridge adds minor overhead. |
 
+### ADR-005: In-App Rate Limiting with Flask-Limiter
+
+| Property | Value |
+|----------|-------|
+| **Date** | 2026-08-01 |
+| **Status** | Accepted |
+| **Context** | No protection against abuse or brute-force login attempts; previously tracked as an open risk. |
+| **Decision** | Add per-IP request throttling using Flask-Limiter, configured entirely through `RATE_LIMIT_*` environment variables (moving-window strategy, in-memory storage by default, stricter limit on `/auth/login`, operational endpoints exempt). |
+| **Consequences** | Positive: all API endpoints are throttled per IP; RFC 7807 429 responses with `Retry-After`; fully disableable. Negative: limiting is per-IP only (no JWT-based keys), and the default in-memory storage is not shared across workers/restarts — use `RATE_LIMIT_STORAGE_URI=redis://...` for multi-worker deployments. |
+
 ---
 
 ## 10. Quality Requirements
@@ -295,7 +322,7 @@ Not implemented. All API messages are in English.
 
 | Risk | Impact | Mitigation |
 |------|--------|------------|
-| No rate limiting | Abuse / DoS | Add reverse proxy rate limiting |
+| In-memory rate-limit storage resets per worker/restart | Inconsistent throttling in multi-worker deployments | Set `RATE_LIMIT_STORAGE_URI=redis://...` |
 | Open CORS (`*`) | Security in production | Restrict CORS in production `.env` |
 | No input sanitization beyond OpenAPI | Database injection | Add server-side validation layer |
 | Single MongoDB connection | Availability | Add connection retry and failover |
@@ -337,6 +364,7 @@ Not implemented. All API messages are in English.
 | Code | Meaning |
 |------|---------|
 | 400  | Invalid credentials, missing fields |
+| 429  | Too many requests (per-IP login limit exceeded) |
 
 #### GET /api/v1/categories
 
@@ -629,6 +657,7 @@ Not implemented. All API messages are in English.
 | 400  | Bad Request | Invalid input, missing fields, duplicate, invalid ObjectId |
 | 401  | Unauthorized | Missing or invalid JWT token |
 | 404  | Not Found | Resource does not exist |
+| 429  | Too Many Requests | Rate limit exceeded (per-IP), includes `Retry-After` |
 | 500  | Internal Server Error | Unexpected server failure |
 
 ---
@@ -721,6 +750,38 @@ Not implemented. All API messages are in English.
 - **Description:** Secret key used to sign JWT tokens.
 - **Example:** `JWT_SECRET_KEY=a-very-long-random-string`
 
+#### RATE_LIMIT_ENABLED
+
+- **Type:** boolean
+- **Required:** No
+- **Default:** `true`
+- **Description:** Master switch for rate limiting; set to `false` to disable throttling entirely.
+- **Example:** `RATE_LIMIT_ENABLED=false`
+
+#### RATE_LIMIT_DEFAULT
+
+- **Type:** string (`;`-separated limits)
+- **Required:** No
+- **Default:** `60 per minute; 5 per second`
+- **Description:** Per-IP limits applied to all `/api/v1/*` endpoints.
+- **Example:** `RATE_LIMIT_DEFAULT=120 per minute`
+
+#### RATE_LIMIT_LOGIN
+
+- **Type:** string
+- **Required:** No
+- **Default:** `5 per minute`
+- **Description:** Per-IP limit applied to `/api/v1/auth/login` (stricter than the default).
+- **Example:** `RATE_LIMIT_LOGIN=3 per minute`
+
+#### RATE_LIMIT_STORAGE_URI
+
+- **Type:** string
+- **Required:** No
+- **Default:** `memory://`
+- **Description:** Rate-limit storage backend URI. Use a shared backend (e.g. `redis://localhost:6379`) for multi-worker deployments.
+- **Example:** `RATE_LIMIT_STORAGE_URI=redis://localhost:6379`
+
 ### 13.2 Configuration Files
 
 | File | Purpose |
@@ -798,6 +859,9 @@ uv run pytest --cov=app --cov-report=term
 
 # Run specific test file
 uv run pytest tests/test_app.py -v
+
+# Run rate limiting tests
+uv run pytest tests/test_rate_limit.py -v
 ```
 
 ### 15.4 Build and Deployment
